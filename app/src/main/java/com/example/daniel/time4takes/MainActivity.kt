@@ -28,10 +28,15 @@ class MainActivity : AppCompatActivity() {
      * [android.support.v4.app.FragmentStatePagerAdapter].
      */
     private var mSectionsPagerAdapter: SectionsPagerAdapter? = null
+    var mDb: AppDatabase? = null
+    private lateinit var mDbWorkerThread: DbWorkerThread
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        mDbWorkerThread = DbWorkerThread("dbWorkerThread")
+        mDbWorkerThread.start()
 
         setSupportActionBar(toolbar)
         // Create the adapter that will return a fragment for each of the three
@@ -46,8 +51,14 @@ class MainActivity : AppCompatActivity() {
                     .setAction("Action", null).show()
         }
 
-    }
+        mDb = AppDatabase.getInstance(this);
 
+        val user = User();
+        user.firstName = "Peter";
+        user.lastName = "Müller";
+
+        mDb?.userDao()?.insertAll(user);
+    }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -94,6 +105,7 @@ class MainActivity : AppCompatActivity() {
 
         override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                                   savedInstanceState: Bundle?): View? {
+
             val rootView = inflater.inflate(R.layout.fragment_main, container, false)
             rootView.section_label.text = getString(R.string.section_format, arguments?.getInt(ARG_SECTION_NUMBER))
             return rootView
