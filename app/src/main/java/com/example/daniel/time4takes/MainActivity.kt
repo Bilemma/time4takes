@@ -1,13 +1,12 @@
 package com.example.daniel.time4takes
 
-import android.support.design.widget.Snackbar
 import android.support.v7.app.AppCompatActivity
 
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager
 import android.support.v4.app.FragmentPagerAdapter
-import android.support.v4.view.ViewPager
 import android.os.Bundle
+import android.os.Handler
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
@@ -30,6 +29,16 @@ class MainActivity : AppCompatActivity() {
     private var mSectionsPagerAdapter: SectionsPagerAdapter? = null
     var mDb: AppDatabase? = null
     private lateinit var mDbWorkerThread: DbWorkerThread
+    private val mUiHandler = Handler()
+
+    private lateinit var mFirstName: String
+    private lateinit var mLastName: String
+
+    /*
+    private fun bindDataWithUi(user: User?) {
+        mFirstName = weatherData?.tempInC.toString()
+    }
+    */
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,18 +55,15 @@ class MainActivity : AppCompatActivity() {
         // Set up the ViewPager with the sections adapter.
         container.adapter = mSectionsPagerAdapter
 
-        fab.setOnClickListener { view ->
-            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show()
-        }
+        mDb = AppDatabase.getInstance(this)
 
-        mDb = AppDatabase.getInstance(this);
+        val user = User()
+        user.firstName = "Peter"
+        user.lastName = "Müller"
 
-        val user = User();
-        user.firstName = "Peter";
-        user.lastName = "Müller";
+        insertUserInDb(user)
 
-        mDb?.userDao()?.insertAll(user);
+        toolbar.title = findUserByLastName("Peter")
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -103,6 +109,7 @@ class MainActivity : AppCompatActivity() {
      */
     class PlaceholderFragment : Fragment() {
 
+
         override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                                   savedInstanceState: Bundle?): View? {
 
@@ -130,5 +137,25 @@ class MainActivity : AppCompatActivity() {
                 return fragment
             }
         }
+    }
+
+    private fun insertUserInDb(user: User) {
+        val task = Runnable { mDb?.userDao()?.insertAll(user) }
+        mDbWorkerThread.postTask(task)
+    }
+
+    private fun findUserByLastName(name:String): User? {
+        val task = Runnable {
+            val user: User?
+            user = mDb?.userDao()?.findByName("", name)
+        }
+        mDbWorkerThread.postTask(task)
+        return user
+    }
+
+    override fun onDestroy() {
+        AppDatabase.destroyInstance()
+        mDbWorkerThread.quit()
+        super.onDestroy()
     }
 }
