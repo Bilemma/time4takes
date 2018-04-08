@@ -31,14 +31,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var mDbWorkerThread: DbWorkerThread
     private val mUiHandler = Handler()
 
-    private lateinit var mFirstName: String
-    private lateinit var mLastName: String
-
-    /*
     private fun bindDataWithUi(user: User?) {
-        mFirstName = weatherData?.tempInC.toString()
+        toolbar.setTitle(user?.firstName + " " + user?.lastName)
     }
-    */
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,8 +57,6 @@ class MainActivity : AppCompatActivity() {
         user.lastName = "Müller"
 
         insertUserInDb(user)
-
-        toolbar.title = findUserByLastName("Peter")
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -77,6 +70,7 @@ class MainActivity : AppCompatActivity() {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         val id = item.itemId
+        findUserByLastName("Peter", "Müller")
 
         if (id == R.id.action_settings) {
             return true
@@ -144,13 +138,14 @@ class MainActivity : AppCompatActivity() {
         mDbWorkerThread.postTask(task)
     }
 
-    private fun findUserByLastName(name:String): User? {
+    private fun findUserByLastName(first:String, last:String) {
         val task = Runnable {
-            val user: User?
-            user = mDb?.userDao()?.findByName("", name)
+            val userData = mDb?.userDao()?.findByName(first, last)
+            mUiHandler.post({
+                bindDataWithUi(userData)
+            })
         }
         mDbWorkerThread.postTask(task)
-        return user
     }
 
     override fun onDestroy() {
